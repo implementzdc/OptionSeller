@@ -43,7 +43,6 @@ from tqsdk import TqApi, TqAuth
 TEST_OPTION_SYMBOLS = [
     "CFFEX.HO2610-C-2500",
     "DCE.m2611-P-2700",
-    "CZCE.AP611C6300",
     "SHFE.ad2611C20400",
     "INE.bc2611C100000",
     "GFEX.lc2611-C-100000",
@@ -622,7 +621,22 @@ def analyze_price_open_interest(quote):
     open_interest = safe_float(
         get_value(quote, "open_interest")
     )
-
+    ins_class = str(get_value(quote, "ins_class", "")).upper()
+    if ins_class == "INDEX":
+        # 指数没有持仓量概念，Price/OI 象限不适用
+        return {
+            "underlying_last_price": safe_float(get_value(quote, "last_price")),
+            "underlying_pre_close": safe_float(get_value(quote, "pre_close")),
+            "underlying_price_change": None,
+            "underlying_price_change_pct": None,
+            "underlying_open_interest": None,
+            "underlying_pre_open_interest": None,
+            "underlying_oi_change": None,
+            "underlying_oi_change_pct": None,
+            "price_direction": "UNKNOWN",
+            "oi_direction": "UNKNOWN",
+            "price_oi_state": "OI_NOT_APPLICABLE",
+        }
     pre_open_interest = safe_float(
         get_value(quote, "pre_open_interest")
     )
@@ -842,7 +856,8 @@ def build_option_snapshot(
     # ========================================================
     # 1. 基础信息
     # ========================================================
-
+    print(option_symbol, "bid1=", get_value(option_quote, "bid_price1"),
+          "ask1=", get_value(option_quote, "ask_price1"))
     option_class = get_value(
         greeks_row,
         "option_class"
@@ -875,11 +890,11 @@ def build_option_snapshot(
     )
 
     bid_price = safe_float(
-        get_value(option_quote, "bid_price")
+        get_value(option_quote, "bid_price1")
     )
 
     ask_price = safe_float(
-        get_value(option_quote, "ask_price")
+        get_value(option_quote, "ask_price1")
     )
 
     volume = safe_float(
